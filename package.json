@@ -1,0 +1,36 @@
+{
+  "name": "ai-seo-content-studio",
+  "version": "2.0.0",
+  "description": "Multi-language AI-powered SEO blog content generator with advanced analytics",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "seo",
+    "ai",
+    "content-generation",
+    "blog",
+    "multilingual",
+    "groq",
+    "gemini",
+    "llama"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
