@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SEO Content Studio - Multi-Language Blog Creator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E85D2F;
+            --primary-light: #FF8C5F;
+            --secondary: #004E89;
+            --secondary-dark: #003D6F;
+            --accent: #F7B801;
+            --accent-light: #FFD93D;
+            --text-dark: #1A1A2E;
+            --text-medium: #4A4A68;
+            --text-light: #6B7280;
+            --bg-light: #FAFBFC;
+            --bg-card: #FFFFFF;
+            --border: #E5E7EB;
+            --border-light: #F3F4F6;
+            --success: #10B981;
+            --success-light: #D1FAE5;
+            --error: #EF4444;
+            --error-light: #FEE2E2;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+            --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.16);
+            --shadow-glow: 0 0 40px rgba(255, 107, 53, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #FAFBFC;
+            min-height: 100vh;
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 78, 137, 0.06) 0%, transparent 50%);
+            animation: backgroundPulse 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes backgroundPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Navigation */
+        .header-nav {
+            background: white;
+            box-shadow: var(--shadow-sm);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--text-dark);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+
+        .breadcrumb-item.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .breadcrumb-separator {
+            color: var(--border);
+        }
+
+        /* Page Container */
+        .page {
+            display: none;
+            flex: 1;
+            padding: 60px 40px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .page.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-hero p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: var(--shadow-lg);
+            border: 2px solid var(--border-light);
+            margin-bottom: 32px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 18px 22px;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: var(--bg-light);
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+            transform: translateY(-2px);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%236B7280' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 20px center;
+            padding-right: 50px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.35);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(255, 107, 53, 0.45);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-dark);
+            border: 2px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-light);
+            border-color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 32px;
+        }
+
+        /* Keyword Grid */
+        .keyword-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 28px;
+        }
+
+        .keyword-item {
+            padding: 24px;
+            background: var(--bg-light);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .keyword-item::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 36px 36px 0;
+            border-color: transparent var(--success) transparent transparent;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .keyword-item::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 6px;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .keyword-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            background: white;
+        }
+
+        .keyword-item.selected {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.35);
+            transform: translateY(-6px);
+        }
+
+        .keyword-item.selected::before,
+        .keyword-item.selected::after {
+            opacity: 1;
+        }
+
+        .keyword-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .keyword-volume {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            margin-top: 6px;
+        }
+
+        .keyword-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .keyword-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* Content Display */
+        .content-display {
+            background: var(--bg-light);
+            padding: 36px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            max-height: 600px;
+            overflow-y: auto;
+            line-height: 1.9;
+            font-size: 1.05rem;
+        }
+
+        /* SEO Dashboard */
+        .seo-dashboard {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 48px;
+            padding: 48px;
+            background: linear-gradient(135deg, var(--bg-light) 0%, white 100%);
+            border-radius: 28px;
+            border: 2px solid var(--border-light);
+            box-shadow: var(--shadow-md);
+        }
+
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: white;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            box-shadow: 0 16px 48px rgba(255, 107, 53, 0.4);
+            font-family: 'Playfair Display', serif;
+            position: relative;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        .score-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .score-metric {
+            background: white;
+            padding: 28px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            transition: all 0.4s ease;
+        }
+
+        .score-metric:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 18px 24px;
+            border-radius: 16px;
+            margin-top: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border: 2px solid;
+        }
+
+        .alert-error {
+            background: var(--error-light);
+            color: #991B1B;
+            border-color: #FCA5A5;
+        }
+
+        .alert-success {
+            background: var(--success-light);
+            color: #065F46;
+            border-color: #6EE7B7;
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+
+        /* Info Tips */
+        .info-tip {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 2px solid #BFDBFE;
+            color: #1E40AF;
+            padding: 20px 24px;
+            border-radius: 16px;
+            margin-bottom: 28px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: start;
+            gap: 14px;
+            line-height: 1.7;
+        }
+
+        .info-tip-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Auto-select box */
+        .auto-select-box {
+            padding: 20px;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border-radius: 16px;
+            border: 2px solid #FCD34D;
+            margin-bottom: 24px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            margin: 0;
+            text-transform: none;
+            font-size: 1.05rem;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .seo-dashboard {
+                grid-template-columns: 1fr;
+                text-align: center;
+                justify-items: center;
+            }
+
+            .score-details {
+                grid-template-columns: 1fr;
+                width: 100%;
+            }
+
+            .keyword-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .card {
+                padding: 32px 24px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .breadcrumb {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Navigation -->
+        <div class="header-nav">
+            <div class="nav-container">
+                <div class="logo">
+                    <div class="logo-icon">✍️</div>
+                    <span>AI SEO Studio</span>
+                </div>
+                <div class="breadcrumb">
+                    <span class="breadcrumb-item" id="bread-topic">
+                        <span>📝</span>
+                        <span>Topic</span>
+                    </span>
+                    <span class="breadcrumb-separator">→</span>
+                    <span class="breadcrumb-item" id="bread-keywords">
+                        <span>🔍</span>
+                        <span>Keywords</span>
+                    </span>
+                    <span class="breadcrumb-separator">→</span>
+                    <span class="breadcrumb-item" id="bread-outline">
+                        <span>📋</span>
+                        <span>Outline</span>
+                    </span>
+                    <span class="breadcrumb-separator">→</span>
+                    <span class="breadcrumb-item" id="bread-content">
+                        <span>✍️</span>
+                        <span>Content</span>
+                    </span>
+                    <span class="breadcrumb-separator">→</span>
+                    <span class="breadcrumb-item" id="bread-analysis">
+                        <span>📊</span>
+                        <span>Analysis</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 1: Topic Input -->
+        <div class="page active" id="page-topic">
+            <div class="page-content">
+                <div class="page-hero">
+                    <h1>Choose Your Topic</h1>
+                    <p>Start by entering your blog topic and selecting your target language</p>
+                </div>
+
+                <div class="card">
+                    <div class="info-tip">
+                        <span class="info-tip-icon">💡</span>
+                        <div>
+                            <strong>Pro Tip:</strong> Be specific and targeted! Instead of "technology", try "AI-powered diagnostic tools in healthcare" for better SEO results.
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="form-group">
+                            <label for="topicInput">📝 Blog Topic</label>
+                            <input type="text" id="topicInput" placeholder="e.g., Sustainable Fashion Trends 2026">
+                        </div>
+                        <div class="form-group">
+                            <label for="languageSelect">🌐 Content Language</label>
+                            <select id="languageSelect">
+                                <option value="english">🇬🇧 English</option>
+                                <option value="hindi">🇮🇳 Hindi (हिन्दी)</option>
+                                <option value="bengali">🇧🇩 Bengali (বাংলা)</option>
+                                <option value="tamil">🇮🇳 Tamil (தமிழ்)</option>
+                                <option value="telugu">🇮🇳 Telugu (తెలుగు)</option>
+                                <option value="marathi">🇮🇳 Marathi (मराठी)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn" onclick="generateKeywords()" id="btnGenerateKeywords">
+                            <span id="btnKeywordsText">🔍 Generate SEO Keywords</span>
+                            <span id="btnKeywordsLoader" class="loading hidden"></span>
+                        </button>
+                    </div>
+
+                    <div id="error1" class="alert alert-error hidden">
+                        <span class="alert-icon">❌</span>
+                        <span id="error1Text"></span>
+                    </div>
+                    <div id="success1" class="alert alert-success hidden">
+                        <span class="alert-icon">✅</span>
+                        <span id="success1Text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 2: Keywords -->
+        <div class="page" id="page-keywords">
+            <div class="page-content">
+                <div class="page-hero">
+                    <h1>Select Keywords</h1>
+                    <p>Choose the best keywords for your content or let AI select them</p>
+                </div>
+
+                <div class="card">
+                    <div class="info-tip">
+                        <span class="info-tip-icon">🎯</span>
+                        <div>
+                            <strong>Selection Strategy:</strong> Choose 3-7 keywords with good search volume. Mix high-volume keywords with niche long-tail variations.
+                        </div>
+                    </div>
+
+                    <div class="auto-select-box">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="autoSelectKeywords">
+                            <span style="font-weight: 600; color: var(--text-dark);">
+                                🤖 Auto-Select Best Ranking Keywords
+                                <span style="font-weight: 400; font-size: 0.9rem; color: var(--text-medium); display: block; margin-top: 4px;">
+                                    Let AI automatically choose the top 5 keywords based on ranking and search volume
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="keyword-grid" id="keywordGrid"></div>
+
+                    <div class="btn-group">
+                        <button class="btn" onclick="generateOutline()" id="btnGenerateOutline">
+                            <span id="btnOutlineText">📝 Generate Content Outline</span>
+                            <span id="btnOutlineLoader" class="loading hidden"></span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="navigateToPage('topic')">
+                            ← Back to Topic
+                        </button>
+                    </div>
+
+                    <div id="error2" class="alert alert-error hidden">
+                        <span class="alert-icon">❌</span>
+                        <span id="error2Text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: Outline -->
+        <div class="page" id="page-outline">
+            <div class="page-content">
+                <div class="page-hero">
+                    <h1>Review Outline</h1>
+                    <p>Check the structure before generating full content</p>
+                </div>
+
+                <div class="card">
+                    <div class="info-tip">
+                        <span class="info-tip-icon">📋</span>
+                        <div>
+                            <strong>Structure Check:</strong> Review the AI-generated outline to ensure comprehensive coverage with logical flow.
+                        </div>
+                    </div>
+
+                    <div class="content-display" id="outlineContent"></div>
+
+                    <div class="btn-group">
+                        <button class="btn" onclick="generateContent()" id="btnGenerateContent">
+                            <span id="btnContentText">✍️ Generate Full Blog Content</span>
+                            <span id="btnContentLoader" class="loading hidden"></span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="navigateToPage('keywords')">
+                            ← Back to Keywords
+                        </button>
+                    </div>
+
+                    <div id="error3" class="alert alert-error hidden">
+                        <span class="alert-icon">❌</span>
+                        <span id="error3Text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 4: Content -->
+        <div class="page" id="page-content">
+            <div class="page-content">
+                <div class="page-hero">
+                    <h1>Your Content</h1>
+                    <p>Complete, SEO-optimized blog post ready to publish</p>
+                </div>
+
+                <div class="card">
+                    <div class="content-display" id="blogContent"></div>
+
+                    <div class="btn-group">
+                        <button class="btn" onclick="optimizeAndScore()">
+                            📊 Analyze SEO Score
+                        </button>
+                        <button class="btn btn-secondary" onclick="copyContent()">
+                            📋 Copy to Clipboard
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadContent()">
+                            💾 Download as TXT
+                        </button>
+                        <button class="btn btn-secondary" onclick="navigateToPage('outline')">
+                            ← Back to Outline
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 5: Analysis -->
+        <div class="page" id="page-analysis">
+            <div class="page-content">
+                <div class="page-hero">
+                    <h1>SEO Analysis</h1>
+                    <p>Comprehensive SEO performance metrics</p>
+                </div>
+
+                <div class="card">
+                    <div class="seo-dashboard">
+                        <div class="score-circle">
+                            <div id="scoreCircle">0</div>
+                            <div class="score-label">SCORE</div>
+                        </div>
+                        <div class="score-details">
+                            <div class="score-metric">
+                                <div class="metric-label">🎯 Keyword Density</div>
+                                <div class="metric-value" id="keywordDensity">0%</div>
+                            </div>
+                            <div class="score-metric">
+                                <div class="metric-label">📖 Readability</div>
+                                <div class="metric-value" id="readability">0/100</div>
+                            </div>
+                            <div class="score-metric">
+                                <div class="metric-label">📝 Word Count</div>
+                                <div class="metric-value" id="contentLength">0</div>
+                            </div>
+                            <div class="score-metric">
+                                <div class="metric-label">🔑 Keyword Usage</div>
+                                <div class="metric-value" id="keywordsUsed">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn" onclick="startOver()">
+                            🔄 Create New Blog Post
+                        </button>
+                        <button class="btn btn-secondary" onclick="navigateToPage('content')">
+                            ← Back to Content
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedKeywords = [];
+        let generatedContent = '';
+        let currentKeywords = [];
+        let currentLanguage = 'english';
+        let currentPage = 'topic';
+
+        // Navigation
+        function navigateToPage(pageName) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            
+            // Show target page
+            document.getElementById(`page-${pageName}`).classList.add('active');
+            
+            // Update breadcrumb
+            document.querySelectorAll('.breadcrumb-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(`bread-${pageName}`).classList.add('active');
+            
+            currentPage = pageName;
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Utility functions
+        function setButtonLoading(btnId, loaderId, textId, isLoading) {
+            const btn = document.getElementById(btnId);
+            const loader = document.getElementById(loaderId);
+            const text = document.getElementById(textId);
+            
+            if (isLoading) {
+                btn.disabled = true;
+                loader.classList.remove('hidden');
+                text.style.opacity = '0';
+            } else {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+                text.style.opacity = '1';
+            }
+        }
+
+        function showAlert(elementId, message, type = 'error') {
+            const alert = document.getElementById(elementId);
+            const textElement = document.getElementById(elementId + 'Text');
+            
+            if (textElement) {
+                textElement.textContent = message;
+            }
+            
+            alert.className = `alert alert-${type}`;
+            alert.classList.remove('hidden');
+            
+            if (type === 'success') {
+                setTimeout(() => alert.classList.add('hidden'), 5000);
+            }
+        }
+
+        function hideAlert(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        }
+
+        async function generateKeywords() {
+            const topic = document.getElementById('topicInput').value.trim();
+            const language = document.getElementById('languageSelect').value;
+            currentLanguage = language;
+            
+            if (!topic) {
+                showAlert('error1', 'Please enter a blog topic first!');
+                return;
+            }
+
+            hideAlert('error1');
+            hideAlert('success1');
+            setButtonLoading('btnGenerateKeywords', 'btnKeywordsLoader', 'btnKeywordsText', true);
+
+            try {
+                const response = await fetch('/api/generate-keywords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic, language })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) throw new Error(data.error);
+
+                const text = data.content[0].text.replace(/```json|```/g, '').trim();
+                const keywords = JSON.parse(text);
+                
+                currentKeywords = keywords;
+                displayKeywords(keywords);
+                
+                showAlert('success1', `Generated ${keywords.length} keywords successfully!`, 'success');
+                
+                setTimeout(() => navigateToPage('keywords'), 1500);
+            } catch (error) {
+                showAlert('error1', `${error.message}. Please try again.`);
+            } finally {
+                setButtonLoading('btnGenerateKeywords', 'btnKeywordsLoader', 'btnKeywordsText', false);
+            }
+        }
+
+        function displayKeywords(keywords) {
+            const grid = document.getElementById('keywordGrid');
+            grid.innerHTML = '';
+            
+            const sortedKeywords = [...keywords].sort((a, b) => {
+                const rankOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+                const aRank = rankOrder[a.ranking || 'medium'];
+                const bRank = rankOrder[b.ranking || 'medium'];
+                if (aRank !== bRank) return bRank - aRank;
+                return (b.volume || 0) - (a.volume || 0);
+            });
+            
+            sortedKeywords.forEach((kw) => {
+                const div = document.createElement('div');
+                div.className = 'keyword-item';
+                div.dataset.keyword = kw.keyword;
+                div.dataset.volume = kw.volume || 0;
+                div.dataset.ranking = kw.ranking || 'medium';
+                
+                let rankingBadge, rankingColor, rankingIcon;
+                
+                if (kw.ranking === 'high') {
+                    rankingBadge = 'Best SEO';
+                    rankingColor = 'background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;';
+                    rankingIcon = '🏆';
+                } else if (kw.ranking === 'medium') {
+                    rankingBadge = 'Good SEO';
+                    rankingColor = 'background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white;';
+                    rankingIcon = '⭐';
+                } else {
+                    rankingBadge = 'Niche';
+                    rankingColor = 'background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%); color: white;';
+                    rankingIcon = '📌';
+                }
+                
+                div.innerHTML = `
+                    <div class="keyword-text">${kw.keyword}</div>
+                    <div class="keyword-volume">🔍 <strong>${(kw.volume || 0).toLocaleString()}</strong> searches/mo</div>
+                    <div class="keyword-badges">
+                        <span class="keyword-badge" style="${rankingColor}">${rankingIcon} ${rankingBadge}</span>
+                    </div>
+                `;
+                
+                div.onclick = () => toggleKeyword(kw.keyword, kw.volume || 0, kw.ranking || 'medium', div);
+                grid.appendChild(div);
+            });
+            
+            if (document.getElementById('autoSelectKeywords').checked) {
+                autoSelectBestKeywords();
+            }
+        }
+
+        function toggleKeyword(keyword, volume, ranking, element) {
+            const index = selectedKeywords.findIndex(k => k.keyword === keyword);
+            
+            if (index > -1) {
+                selectedKeywords.splice(index, 1);
+                element.classList.remove('selected');
+            } else {
+                selectedKeywords.push({ keyword, volume, ranking });
+                element.classList.add('selected');
+            }
+        }
+
+        function autoSelectBestKeywords() {
+            selectedKeywords = [];
+            document.querySelectorAll('.keyword-item.selected').forEach(el => el.classList.remove('selected'));
+            
+            const keywordElements = Array.from(document.querySelectorAll('.keyword-item'));
+            const scoredKeywords = keywordElements.map(el => {
+                const ranking = el.dataset.ranking;
+                const volume = parseInt(el.dataset.volume) || 0;
+                
+                let score = 0;
+                if (ranking === 'high') score += 100;
+                else if (ranking === 'medium') score += 50;
+                else score += 25;
+                score += volume / 100;
+                
+                return { element: el, score };
+            });
+            
+            scoredKeywords.sort((a, b) => b.score - a.score);
+            const topKeywords = scoredKeywords.slice(0, 5);
+            
+            topKeywords.forEach(({ element }) => {
+                const keyword = element.dataset.keyword;
+                const volume = parseInt(element.dataset.volume) || 0;
+                const ranking = element.dataset.ranking;
+                
+                selectedKeywords.push({ keyword, volume, ranking });
+                element.classList.add('selected');
+            });
+        }
+
+        document.getElementById('autoSelectKeywords')?.addEventListener('change', (e) => {
+            if (e.target.checked && currentKeywords.length > 0) {
+                autoSelectBestKeywords();
+            } else if (!e.target.checked) {
+                selectedKeywords = [];
+                document.querySelectorAll('.keyword-item.selected').forEach(el => el.classList.remove('selected'));
+            }
+        });
+
+        async function generateOutline() {
+            if (selectedKeywords.length === 0) {
+                showAlert('error2', 'Please select at least one keyword!');
+                return;
+            }
+
+            hideAlert('error2');
+            setButtonLoading('btnGenerateOutline', 'btnOutlineLoader', 'btnOutlineText', true);
+
+            try {
+                const keywords = selectedKeywords.map(k => k.keyword);
+                const topic = document.getElementById('topicInput').value.trim();
+                
+                const response = await fetch('/api/generate-outline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keywords, language: currentLanguage, topic })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('outlineContent').innerHTML = `<pre style="white-space: pre-wrap;">${data.content[0].text}</pre>`;
+                
+                navigateToPage('outline');
+            } catch (error) {
+                showAlert('error2', `${error.message}. Please try again.`);
+            } finally {
+                setButtonLoading('btnGenerateOutline', 'btnOutlineLoader', 'btnOutlineText', false);
+            }
+        }
+
+        async function generateContent() {
+            const topic = document.getElementById('topicInput').value.trim();
+            hideAlert('error3');
+            setButtonLoading('btnGenerateContent', 'btnContentLoader', 'btnContentText', true);
+
+            try {
+                const keywords = selectedKeywords.map(k => k.keyword);
+                
+                const response = await fetch('/api/generate-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keywords, language: currentLanguage, topic })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                generatedContent = data.content[0].text;
+                document.getElementById('blogContent').innerHTML = generatedContent.replace(/\n/g, '<br>');
+                
+                navigateToPage('content');
+            } catch (error) {
+                showAlert('error3', `${error.message}. Please try again.`);
+            } finally {
+                setButtonLoading('btnGenerateContent', 'btnContentLoader', 'btnContentText', false);
+            }
+        }
+
+        function optimizeAndScore() {
+            const text = document.getElementById('blogContent').innerText;
+            const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+            
+            let keywordCount = 0;
+            selectedKeywords.forEach(kw => {
+                const regex = new RegExp(kw.keyword, 'gi');
+                const matches = text.match(regex);
+                if (matches) keywordCount += matches.length;
+            });
+            const density = ((keywordCount / wordCount) * 100).toFixed(2);
+
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+            const avgWordsPerSentence = wordCount / sentences;
+            const readability = Math.max(0, Math.min(100, 100 - (avgWordsPerSentence - 15) * 2)).toFixed(0);
+
+            let score = 0;
+            score += wordCount >= 1500 ? 25 : (wordCount / 1500) * 25;
+            score += density >= 1 && density <= 3 ? 25 : 15;
+            score += readability >= 60 ? 25 : (readability / 60) * 25;
+            score += keywordCount >= 10 ? 25 : (keywordCount / 10) * 25;
+            score = Math.round(score);
+
+            animateValue('scoreCircle', 0, score, 1500);
+            
+            document.getElementById('keywordDensity').textContent = density + '%';
+            document.getElementById('readability').textContent = readability;
+            document.getElementById('contentLength').textContent = wordCount.toLocaleString();
+            document.getElementById('keywordsUsed').textContent = keywordCount;
+
+            navigateToPage('analysis');
+        }
+
+        function animateValue(id, start, end, duration) {
+            const element = document.getElementById(id);
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    element.textContent = Math.round(end);
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.round(current);
+                }
+            }, 16);
+        }
+
+        function copyContent() {
+            const content = document.getElementById('blogContent').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('✅ Content copied to clipboard successfully!');
+            });
+        }
+
+        function downloadContent() {
+            const content = document.getElementById('blogContent').innerText;
+            const topic = document.getElementById('topicInput').value.trim().replace(/[^a-z0-9]/gi, '-').toLowerCase();
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${topic}-blog-${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function startOver() {
+            if (confirm('🔄 Start over? All progress will be lost.')) {
+                location.reload();
+            }
+        }
+
+        // Initialize
+        document.getElementById('topicInput')?.focus();
+        document.getElementById('topicInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateKeywords();
+        });
+    </script>
+</body>
+</html>
