@@ -1,196 +1,606 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const fetch = require('node-fetch');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-const gemini = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
-const hasGroq = !!process.env.GROQ_API_KEY;
-const hasGemini = !!process.env.GEMINI_API_KEY;
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-async function callAI({ provider = 'auto', prompt, language = 'english', maxTokens = 8192 }) {
-  if (provider === 'auto') provider = hasGroq ? 'groq' : 'gemini';
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
+});
 
-  if (provider === 'gemini' && gemini) {
-    try {
-      const model = gemini.getGenerativeModel({
-        model: 'gemini-1.5-pro',
-        generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens }
-      });
-      const result = await model.generateContent(prompt);
-      return result.response.text();
-    } catch (err) {
-      if (hasGroq) return callAI({ provider: 'groq', prompt, language, maxTokens });
-      throw err;
-    }
+// Language script examples for better AI understanding
+const languageScripts = {
+  'hindi': {
+    name: 'Hindi',
+    nativeName: 'हिन्दी',
+    script: 'Devanagari',
+    example: 'डिजिटल मार्केटिंग, ऑनलाइन व्यापार, सोशल मीडिया'
+  },
+  'bengali': {
+    name: 'Bengali',
+    nativeName: 'বাংলা',
+    script: 'Bengali',
+    example: 'ডিজিটাল মার্কেটিং, অনলাইন ব্যবসা, সোশ্যাল মিডিয়া'
+  },
+  'tamil': {
+    name: 'Tamil',
+    nativeName: 'தமிழ்',
+    script: 'Tamil',
+    example: 'டிஜிட்டல் மார்க்கெட்டிங், ஆன்லைன் வணிகம், சமூக ஊடகம்'
+  },
+  'telugu': {
+    name: 'Telugu',
+    nativeName: 'తెలుగు',
+    script: 'Telugu',
+    example: 'డిజిటల్ మార్కెటింగ్, ఆన్‌లైన్ వ్యాపారం, సోషల్ మీడియా'
+  },
+  'marathi': {
+    name: 'Marathi',
+    nativeName: 'मराठी',
+    script: 'Devanagari',
+    example: 'डिजिटल मार्केटिंग, ऑनलाइन व्यवसाय, सोशल मीडिया'
   }
+};
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-
-  const data = await response.json();
-  return data.choices[0].message.content;
-}
-
+/* ==================== KEYWORD GENERATION ==================== */
 app.post('/api/generate-keywords', async (req, res) => {
   try {
     const { topic, language = 'english' } = req.body;
-    const langMap = {
-      hindi: 'हिन्दी', bengali: 'বাংলা', tamil: 'தமிழ்', telugu: 'తెలుగు', marathi: 'मराठी'
-    };
     
-    const prompt = `Generate 30 SEO keywords for "${topic}" in ${langMap[language] || 'English'}. Use native script. Return ONLY JSON array: [{"keyword":"text", "volume":10000, "ranking":"high"}]`;
-    
-    const text = await callAI({ prompt, language });
-    const clean = text.replace(/```json|```/g, '').trim();
-    const keywords = JSON.parse(clean.match(/\[[\s\S]*\]/)?.[0] || clean);
-    res.json({ content: [{ text: JSON.stringify(keywords) }] });
+    console.log('========================================');
+    console.log('🔍 KEYWORD GENERATION REQUEST');
+    console.log('Topic:', topic);
+    console.log('Language:', language);
+    console.log('========================================');
+
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    const hasGemini = !!process.env.GOOGLE_API_KEY;
+    const hasGroq = !!process.env.GROQ_API_KEY;
+
+    // CRITICAL: For non-English, we MUST use Gemini
+    let useAPI = 'none';
+    if (language !== 'english') {
+      if (!hasGemini) {
+        return res.status(400).json({ 
+          error: 'Gemini API key required for non-English languages. Please add GOOGLE_API_KEY to your .env file.' 
+        });
+      }
+      useAPI = 'gemini';
+      console.log('🌐 Using Gemini for', language);
+    } else if (hasGroq) {
+      useAPI = 'groq';
+      console.log('🚀 Using Groq for English');
+    } else if (hasGemini) {
+      useAPI = 'gemini';
+      console.log('🌐 Using Gemini for English');
+    }
+
+    if (useAPI === 'none') {
+      throw new Error('No API keys configured');
+    }
+
+    let keywords;
+
+    if (useAPI === 'gemini') {
+      let prompt;
+      
+      if (language === 'english') {
+        prompt = `Generate 12 SEO keywords for: "${topic}"
+
+Return ONLY valid JSON array:
+[
+  {"keyword": "keyword phrase", "volume": 12000, "ranking": "high"},
+  {"keyword": "another keyword", "volume": 8500, "ranking": "medium"}
+]
+
+Include ranking field: "high", "medium", or "low" based on SEO potential.
+Volumes: 1000-50000. No markdown, no backticks.`;
+      } else {
+        const langInfo = languageScripts[language];
+        
+        // ULTRA-STRONG MULTILINGUAL PROMPT
+        prompt = `CRITICAL INSTRUCTION - READ CAREFULLY:
+
+You are generating keywords for: "${topic}"
+Target Language: ${langInfo.name} (${langInfo.nativeName})
+Script: ${langInfo.script}
+
+MANDATORY RULES - NO EXCEPTIONS:
+❌ DO NOT write in English
+❌ DO NOT use Roman/Latin script  
+❌ DO NOT transliterate
+❌ DO NOT mix languages
+✅ ONLY use ${langInfo.script} script
+✅ ONLY write in pure ${langInfo.name}
+
+EXAMPLE (copy this style):
+${langInfo.example}
+
+TASK:
+Generate 12 SEO keywords about "${topic}" entirely in ${langInfo.name} language using ${langInfo.script} script.
+
+OUTPUT FORMAT (JSON only, no markdown):
+[
+  {"keyword": "keyword in ${langInfo.script} script", "volume": 12000, "ranking": "high"},
+  {"keyword": "keyword in ${langInfo.script} script", "volume": 8500, "ranking": "medium"}
+]
+
+RANKING GUIDE:
+- "high": Best SEO potential, high search volume
+- "medium": Good SEO potential, moderate volume
+- "low": Niche keywords, lower volume
+
+VERIFICATION CHECKLIST:
+□ All keywords are in ${langInfo.script} script?
+□ No English words present?
+□ No Roman characters used?
+□ Follows example format above?
+
+Generate now - remember: ONLY ${langInfo.script} script!`;
+      }
+
+      console.log('📤 Sending to Gemini API...');
+      
+      // Use stable Gemini models
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: prompt }]
+            }],
+            generationConfig: {
+              temperature: 0.9,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 2048,
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Gemini API Error Response:', errorText);
+        throw new Error(`Gemini API failed: ${response.status} - Check your API key and quota`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error('❌ Gemini Error:', data.error);
+        throw new Error(data.error.message || 'Gemini API error');
+      }
+
+      if (!data.candidates || !data.candidates[0]) {
+        console.error('❌ Invalid Gemini response:', JSON.stringify(data));
+        throw new Error('Invalid response from Gemini API');
+      }
+
+      let text = data.candidates[0].content.parts[0].text
+        .replace(/```json|```/g, '')
+        .trim();
+
+      console.log('📥 Gemini Response (first 300 chars):');
+      console.log(text.substring(0, 300));
+
+      try {
+        keywords = JSON.parse(text);
+        
+        // Ensure ranking field exists
+        keywords = keywords.map(kw => ({
+          keyword: kw.keyword,
+          volume: kw.volume || 5000,
+          ranking: kw.ranking || 'medium'
+        }));
+        
+        console.log('✅ Successfully parsed', keywords.length, 'keywords');
+        console.log('📝 First keyword:', keywords[0]);
+        
+      } catch (parseError) {
+        console.error('❌ JSON Parse Error:', parseError.message);
+        console.error('Raw text:', text);
+        throw new Error('Failed to parse keywords - AI returned invalid JSON');
+      }
+
+    } else if (useAPI === 'groq') {
+      console.log('📤 Sending to Groq API...');
+      
+      const response = await fetch(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            temperature: 0.7,
+            max_tokens: 2000,
+            messages: [{
+              role: 'user',
+              content: `Generate 12 SEO keywords for: "${topic}"
+
+Return JSON array with ranking:
+[{"keyword":"keyword","volume":12000,"ranking":"high"}]
+
+ranking values: "high", "medium", "low"
+No markdown, just JSON.`
+            }]
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Groq API request failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error('❌ Groq Error:', data.error);
+        throw new Error(data.error.message || 'Groq API error');
+      }
+
+      let text = data.choices[0].message.content
+        .replace(/```json|```/g, '')
+        .trim();
+
+      console.log('📥 Groq Response (first 200 chars):', text.substring(0, 200));
+
+      keywords = JSON.parse(text);
+      
+      // Ensure ranking field
+      keywords = keywords.map(kw => ({
+        keyword: kw.keyword,
+        volume: kw.volume || 5000,
+        ranking: kw.ranking || 'medium'
+      }));
+      
+      console.log('✅ Parsed', keywords.length, 'keywords');
+    }
+
+    res.json({ 
+      content: [{ text: JSON.stringify(keywords) }],
+      language: language
+    });
+
   } catch (err) {
+    console.error('❌❌❌ CRITICAL ERROR:', err.message);
+    console.error('Stack:', err.stack);
     res.status(500).json({ error: err.message });
   }
 });
 
+/* ==================== OUTLINE GENERATION ==================== */
 app.post('/api/generate-outline', async (req, res) => {
   try {
-    const { topic, keywords, language = 'english' } = req.body;
-    const prompt = `Create blog outline for "${topic}". Keywords: ${keywords.join(', ')}. Include: title, meta, intro, 8 sections, FAQs, conclusion.`;
-    const text = await callAI({ prompt, language, maxTokens: 4000 });
-    res.json({ content: [{ text }] });
+    const { keywords, language = 'english', topic } = req.body;
+    
+    console.log('========================================');
+    console.log('📝 OUTLINE GENERATION REQUEST');
+    console.log('Topic:', topic);
+    console.log('Language:', language);
+    console.log('Keywords:', keywords);
+    console.log('========================================');
+
+    if (!keywords || keywords.length === 0) {
+      return res.status(400).json({ error: 'Keywords are required' });
+    }
+
+    const hasGemini = !!process.env.GOOGLE_API_KEY;
+    const hasGroq = !!process.env.GROQ_API_KEY;
+
+    const useAPI = language !== 'english' && hasGemini ? 'gemini' : hasGroq ? 'groq' : hasGemini ? 'gemini' : 'none';
+
+    if (useAPI === 'none') {
+      throw new Error('No API keys configured');
+    }
+
+    const keywordList = keywords.join(', ');
+    let promptText;
+    
+    if (language === 'english') {
+      promptText = `Create blog outline for: "${topic}"
+
+Keywords: ${keywordList}
+
+Include:
+- Compelling title
+- Meta description (150-160 chars)
+- 6-8 H2 sections
+- 2-3 H3 subsections each
+- Key points per section
+
+Format: Plain text, clear hierarchy.`;
+    } else {
+      const langInfo = languageScripts[language];
+      
+      promptText = `CRITICAL - WRITE EVERYTHING IN ${langInfo.name.toUpperCase()}:
+
+Topic: "${topic}"
+Keywords (use in ${langInfo.name}): ${keywordList}
+
+STRICT RULES:
+❌ NO English text anywhere
+❌ NO Roman script
+✅ ONLY ${langInfo.script} script
+✅ ONLY ${langInfo.name} language
+
+EXAMPLE STYLE: ${langInfo.example}
+
+Create outline IN ${langInfo.name}:
+- Title (in ${langInfo.script})
+- Meta description (in ${langInfo.script})
+- 6-8 main sections (in ${langInfo.script})
+- Subsections (in ${langInfo.script})
+
+VERIFY: Every single word must be in ${langInfo.script} script!`;
+    }
+
+    let outlineText;
+
+    if (useAPI === 'gemini') {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+              temperature: 0.9,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 4096,
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Gemini API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      outlineText = data.candidates[0].content.parts[0].text;
+
+    } else if (useAPI === 'groq') {
+      const response = await fetch(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            temperature: 0.8,
+            max_tokens: 4000,
+            messages: [{ role: 'user', content: promptText }]
+          })
+        }
+      );
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      outlineText = data.choices[0].message.content;
+    }
+
+    console.log('✅ Outline generated');
+    res.json({ content: [{ text: outlineText }] });
+
   } catch (err) {
+    console.error('❌ ERROR:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
+/* ==================== FULL BLOG GENERATION ==================== */
 app.post('/api/generate-content', async (req, res) => {
   try {
-    const { topic, keywords, language = 'english' } = req.body;
+    const { keywords, language = 'english', topic } = req.body;
     
-    const prompt = `Write a complete 2500-word SEO blog post about "${topic}".
+    console.log('========================================');
+    console.log('✍️ FULL BLOG GENERATION REQUEST');
+    console.log('Topic:', topic);
+    console.log('Language:', language);
+    console.log('Keywords:', keywords);
+    console.log('========================================');
 
-Keywords: ${keywords.join(', ')}
-
-Write in ${language}. Start immediately with the title and content. Use this EXACT format:
-
-<h1>Your Complete SEO Title About ${topic}</h1>
-
-<div style="background:#e0f2fe;padding:20px;border-radius:10px;margin:20px 0;border-left:4px solid #0284c7;">
-<p style="margin:5px 0;"><strong>Meta Description:</strong> Write 150-160 characters here with keyword and call-to-action</p>
-<p style="margin:5px 0;"><strong>Keywords:</strong> ${keywords.slice(0,5).join(', ')}</p>
-</div>
-
-<h2>Introduction</h2>
-<p>First paragraph introducing ${topic} with a hook.</p>
-<p>Second paragraph explaining the problem and mentioning ${keywords[0]}.</p>
-<p>Third paragraph on why this matters.</p>
-<p>Fourth paragraph on what readers will learn.</p>
-
-<h2>First Main Topic About ${topic}</h2>
-<p>Paragraph explaining this aspect.</p>
-<p>Paragraph with examples and details.</p>
-<p>Paragraph with insights.</p>
-<p>Paragraph with benefits.</p>
-
-<h3>Important Subtopic</h3>
-<p>Detailed paragraph about this subtopic.</p>
-<p>More details and examples.</p>
-
-<h2>Second Main Topic</h2>
-<p>Four paragraphs of content here.</p>
-
-<h2>Third Main Topic</h2>
-<p>Four paragraphs here.</p>
-
-<h2>Fourth Main Topic</h2>
-<p>Three to four paragraphs.</p>
-
-<h2>Fifth Main Topic</h2>
-<p>Three to four paragraphs.</p>
-
-<h2>Sixth Main Topic</h2>
-<p>Three to four paragraphs.</p>
-
-<h2>Seventh Main Topic</h2>
-<p>Three to four paragraphs.</p>
-
-<h2>Eighth Main Topic</h2>
-<p>Three to four paragraphs about tools or future trends.</p>
-
-<h2>Key Takeaways</h2>
-<ul>
-<li>First key takeaway sentence</li>
-<li>Second key takeaway sentence</li>
-<li>Third key takeaway sentence</li>
-<li>Fourth key takeaway sentence</li>
-<li>Fifth key takeaway sentence</li>
-<li>Sixth key takeaway sentence</li>
-<li>Seventh key takeaway sentence</li>
-</ul>
-
-<h2>Conclusion</h2>
-<p>Paragraph summarizing main points.</p>
-<p>Paragraph on value with ${keywords[0]}.</p>
-<p>Paragraph on action steps.</p>
-<p>Paragraph with strong CTA.</p>
-
-<h2>Frequently Asked Questions</h2>
-
-<h3>What is the best approach to ${keywords[0]}?</h3>
-<p>Answer in 3-4 sentences with practical information.</p>
-
-<h3>How can I get started with ${topic}?</h3>
-<p>Answer in 3-4 sentences.</p>
-
-<h3>What are the main benefits?</h3>
-<p>Answer in 3-4 sentences.</p>
-
-<h3>What challenges should I expect?</h3>
-<p>Answer in 3-4 sentences.</p>
-
-<h3>How long does it take to see results?</h3>
-<p>Answer in 3-4 sentences.</p>
-
-<h3>What tools or resources do I need?</h3>
-<p>Answer in 3-4 sentences.</p>
-
-<h3>Is this suitable for beginners?</h3>
-<p>Answer in 3-4 sentences.</p>
-
-Write the COMPLETE blog following this structure. Replace example text with REAL content about ${topic}. Start with <h1> tag immediately:`;
-
-    let text = await callAI({ prompt, language, maxTokens: 8192 });
-    
-    // Clean up any markdown artifacts
-    text = text.replace(/```html/g, '').replace(/```/g, '').trim();
-    
-    // Ensure it starts with <h1>
-    if (!text.startsWith('<h1>')) {
-      text = '<h1>' + topic + ' - Complete Guide</h1>\n\n' + text;
+    if (!keywords || keywords.length === 0) {
+      return res.status(400).json({ error: 'Keywords are required' });
     }
+
+    const hasGemini = !!process.env.GOOGLE_API_KEY;
+    const hasGroq = !!process.env.GROQ_API_KEY;
+
+    const useAPI = language !== 'english' && hasGemini ? 'gemini' : hasGroq ? 'groq' : hasGemini ? 'gemini' : 'none';
+
+    if (useAPI === 'none') {
+      throw new Error('No API keys configured');
+    }
+
+    const keywordList = keywords.join(', ');
+    let promptText;
     
-    console.log(`✅ Generated content (${text.length} chars)`);
-    res.json({ content: [{ text }] });
+    if (language === 'english') {
+      promptText = `Write a COMPLETE, COMPREHENSIVE SEO blog post about: "${topic}"
+
+Target Keywords (use naturally): ${keywordList}
+
+REQUIREMENTS:
+✅ 2000-2500 words (FULL LENGTH article)
+✅ Catchy, SEO-optimized title
+✅ Engaging introduction (hook the reader)
+✅ 8-10 detailed sections with H2 headings
+✅ Include H3 subheadings where appropriate
+✅ Use keywords naturally throughout (1.5-2% density)
+✅ Add examples, statistics, and practical tips
+✅ Include bullet points and numbered lists where helpful
+✅ Write in conversational, engaging tone
+✅ Strong conclusion with call-to-action
+✅ Use transition words for flow
+✅ Make it informative and valuable
+
+IMPORTANT:
+- Write a COMPLETE blog post, not just an outline
+- Include ALL content for each section
+- Make it ready to publish
+- Focus on reader value and engagement
+
+Start writing the FULL blog post now:`;
+    } else {
+      const langInfo = languageScripts[language];
+      
+      promptText = `Write a COMPLETE, COMPREHENSIVE blog post IN ${langInfo.name.toUpperCase()}:
+
+Topic: "${topic}"
+Keywords (use naturally in ${langInfo.name}): ${keywordList}
+
+ABSOLUTE REQUIREMENTS:
+❌ ZERO English words
+❌ ZERO Roman script
+❌ ZERO transliteration
+✅ 100% ${langInfo.script} script
+✅ 100% ${langInfo.name} language
+✅ 2000-2500 words in ${langInfo.name}
+
+EXAMPLE STYLE: ${langInfo.example}
+
+STRUCTURE (all in ${langInfo.name}):
+✅ Catchy title (${langInfo.script})
+✅ Engaging introduction (${langInfo.script})
+✅ 8-10 detailed sections with headings (${langInfo.script})
+✅ Include subheadings (${langInfo.script})
+✅ Examples and tips (${langInfo.script})
+✅ Use keywords naturally
+✅ Strong conclusion (${langInfo.script})
+
+CRITICAL: Write the COMPLETE blog post, not just outline!
+Every single word must be in ${langInfo.script} script.
+
+Start writing the FULL blog post in ${langInfo.name} now:`;
+    }
+
+    let contentText;
+
+    if (useAPI === 'gemini') {
+      console.log('📤 Generating full blog with Gemini...');
+      
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+              temperature: 0.85,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 8192,
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Gemini API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      contentText = data.candidates[0].content.parts[0].text;
+
+    } else if (useAPI === 'groq') {
+      console.log('📤 Generating full blog with Groq...');
+      
+      const response = await fetch(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            temperature: 0.8,
+            max_tokens: 8000,
+            messages: [{ role: 'user', content: promptText }]
+          })
+        }
+      );
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      contentText = data.choices[0].message.content;
+    }
+
+    console.log('✅ Full blog generated');
+    console.log('📊 Length:', contentText.length, 'characters');
+    console.log('📝 Word count:', contentText.split(/\s+/).length, 'words');
+    
+    res.json({ content: [{ text: contentText }] });
+
   } catch (err) {
-    console.error('Error:', err);
+    console.error('❌ ERROR:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(process.env.PORT || 3000, () => {
+// Start server
+app.listen(PORT, () => {
   console.log('========================================');
-  console.log('🚀 Server running on port', process.env.PORT || 3000);
-  console.log('Groq:', hasGroq ? '✅' : '❌');
-  console.log('Gemini:', hasGemini ? '✅' : '❌');
+  console.log('🚀 AI SEO Content Studio Server');
+  console.log('========================================');
+  console.log(`✅ Server: http://localhost:${PORT}`);
+  console.log(`📝 API Keys:`);
+  console.log(`   Groq: ${process.env.GROQ_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+  console.log(`   Gemini: ${process.env.GOOGLE_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+  console.log('========================================');
+  if (!process.env.GOOGLE_API_KEY) {
+    console.log('⚠️  WARNING: Gemini API key missing!');
+    console.log('   Non-English languages will not work.');
+    console.log('   Add GOOGLE_API_KEY to .env file');
+  }
+  console.log('📚 Using stable Gemini model: gemini-1.5-flash');
   console.log('========================================');
 });
