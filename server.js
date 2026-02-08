@@ -1,11 +1,19 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+
+// Serve static files from current directory
+app.use(express.static(__dirname));
+
+// Serve index.html for root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 async function callGroqAI({ prompt, language = 'english', maxTokens = 8192 }) {
   if (!process.env.GROQ_API_KEY) {
@@ -158,7 +166,7 @@ app.post('/api/generate-content', async (req, res) => {
       hindi: 'हिन्दी (Hindi)', 
       bengali: 'বাংলা (Bengali)', 
       tamil: 'தமிழ் (Tamil)', 
-      telugu: 'తెలుగু (Telugu)', 
+      telugu: 'తెలుగు (Telugu)', 
       marathi: 'मराठी (Marathi)'
     };
     
@@ -324,7 +332,7 @@ app.listen(PORT, () => {
   console.log('========================================');
   console.log('🚀 AI SEO Content Studio Server');
   console.log('========================================');
-  console.log(`📡 Server running on port ${PORT}`);
+  console.log(`📡 Server running on http://localhost:${PORT}`);
   console.log(`🔑 Groq API: ${process.env.GROQ_API_KEY ? '✅ Configured' : '❌ Missing'}`);
   console.log('========================================');
   if (!process.env.GROQ_API_KEY) {
