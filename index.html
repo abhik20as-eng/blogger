@@ -899,6 +899,9 @@
         let currentLanguage = 'english';
         let currentPage = 'topic';
 
+        // API Base URL - change this if deploying
+        const API_BASE = window.location.origin;
+
         // Navigation
         function navigateToPage(pageName) {
             // Hide all pages
@@ -969,11 +972,16 @@
             setButtonLoading('btnGenerateKeywords', 'btnKeywordsLoader', 'btnKeywordsText', true);
 
             try {
-                const response = await fetch('/api/generate-keywords', {
+                const response = await fetch(`${API_BASE}/api/generate-keywords`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ topic, language })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate keywords');
+                }
 
                 const data = await response.json();
                 
@@ -982,6 +990,10 @@
                 const text = data.content[0].text.replace(/```json|```/g, '').trim();
                 const keywords = JSON.parse(text);
                 
+                if (!Array.isArray(keywords) || keywords.length === 0) {
+                    throw new Error('No keywords were generated');
+                }
+                
                 currentKeywords = keywords;
                 displayKeywords(keywords);
                 
@@ -989,7 +1001,8 @@
                 
                 setTimeout(() => navigateToPage('keywords'), 1500);
             } catch (error) {
-                showAlert('error1', `${error.message}. Please try again.`);
+                console.error('Error:', error);
+                showAlert('error1', `Error: ${error.message}. Please check your API key and try again.`);
             } finally {
                 setButtonLoading('btnGenerateKeywords', 'btnKeywordsLoader', 'btnKeywordsText', false);
             }
@@ -1112,11 +1125,16 @@
                 const keywords = selectedKeywords.map(k => k.keyword);
                 const topic = document.getElementById('topicInput').value.trim();
                 
-                const response = await fetch('/api/generate-outline', {
+                const response = await fetch(`${API_BASE}/api/generate-outline`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ keywords, language: currentLanguage, topic })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate outline');
+                }
 
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
@@ -1125,7 +1143,8 @@
                 
                 navigateToPage('outline');
             } catch (error) {
-                showAlert('error2', `${error.message}. Please try again.`);
+                console.error('Error:', error);
+                showAlert('error2', `Error: ${error.message}. Please try again.`);
             } finally {
                 setButtonLoading('btnGenerateOutline', 'btnOutlineLoader', 'btnOutlineText', false);
             }
@@ -1139,11 +1158,16 @@
             try {
                 const keywords = selectedKeywords.map(k => k.keyword);
                 
-                const response = await fetch('/api/generate-content', {
+                const response = await fetch(`${API_BASE}/api/generate-content`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ keywords, language: currentLanguage, topic })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate content');
+                }
 
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
@@ -1153,7 +1177,8 @@
                 
                 navigateToPage('content');
             } catch (error) {
-                showAlert('error3', `${error.message}. Please try again.`);
+                console.error('Error:', error);
+                showAlert('error3', `Error: ${error.message}. Please try again.`);
             } finally {
                 setButtonLoading('btnGenerateContent', 'btnContentLoader', 'btnContentText', false);
             }
@@ -1213,6 +1238,9 @@
             const content = document.getElementById('blogContent').innerText;
             navigator.clipboard.writeText(content).then(() => {
                 alert('✅ Content copied to clipboard successfully!');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                alert('❌ Failed to copy content');
             });
         }
 
@@ -1240,6 +1268,21 @@
         document.getElementById('topicInput')?.focus();
         document.getElementById('topicInput')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') generateKeywords();
+        });
+
+        // Check API health on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                console.log('API Status:', data);
+                
+                if (data.groq !== 'configured') {
+                    console.warn('⚠️ Groq API key not configured');
+                }
+            } catch (error) {
+                console.error('API health check failed:', error);
+            }
         });
     </script>
 </body>
